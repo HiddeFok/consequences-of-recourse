@@ -1,6 +1,7 @@
-# Code for experiments accomponied with the paper Risk of Recourse
+# Experiments of the paper Risk of Recourse in Binary Classification
 
-This repository contains all the relevant code to run the experiments that are conducted in the paper 'The Risks of Recourse in Binary Classification'.
+This repository contains all the relevant code to run the experiments that are conducted in the paper 
+'The Risks of Recourse in Binary Classification'.
 
 ## Installing the requirements
 
