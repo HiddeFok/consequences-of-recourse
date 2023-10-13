@@ -38,7 +38,7 @@ python -u synthetic_experiments.py  \
 
 Aside from these experiments, there are also 2 files that can be used to generate the date for when recourse is accepted
 nly with a certain probability. These scripts are `synthetic_experiments_uniform_probs.py` 
-and `synthetic_experiments_distance_probs.py`. T
+and `synthetic_experiments_distance_probs.py`. 
 
 #### Linear Gaussians
 There is an additional file, `linear_gaussians.py`, which runs the experiment for the Gaussian example (3.1 in the main paper). This function can be run without any parameters 
@@ -71,5 +71,6 @@ python -u real_experiments_single.py  \
 
 ## Scripts
 
-The main directory contains two scripts, `run_synth_experiments.sh` and `run_real_experiments.sh` that runs
+The main directory contains two scripts, `run_synth_experiments.sh`, `run_synth_experiments_probs.sh`
+and `run_real_experiments.sh` that runs
 all experiments in parralel. WARNING! The real data experiment can take a very long time, even when run in parallel. 
