@@ -51,6 +51,7 @@ recourse_models = {
     'growing_spheres': GrowingSpheres,
 }
 
+
 recourse_models_synthetic = {
     'brute_force': BruteForceRecourse,
     'wachter': Wachter,

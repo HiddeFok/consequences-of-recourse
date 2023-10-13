@@ -1,8 +1,3 @@
-"""
-Custom implementation of the Growing Spheres counterfactual method. This method was derived and adapted
-from the implementation in the CARLA recourse library. 
-"""
-
 import numpy as np
 
 from tqdm import tqdm

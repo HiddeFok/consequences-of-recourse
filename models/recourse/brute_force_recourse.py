@@ -1,9 +1,9 @@
 import numpy as np
-from typing import Union
-
 from scipy.spatial import distance_matrix
 
 from models.recourse.base import RecourseMethodBase
+from utils.utils import sample_bernoulli
+
 
 class BruteForceRecourse(RecourseMethodBase):
 
@@ -30,7 +30,9 @@ class BruteForceRecourse(RecourseMethodBase):
             self, 
             x: np.array, 
             y_hat: np.array, 
-            bpar: Union[bool, None] = None
+            prob: float or None = None,
+            sigma: float or None = None,
+            bpar: bool or None = None
         ) -> np.array:
         x_after_recourse = x.copy()
         x_2_predicted = x[y_hat == 0, :]
@@ -48,6 +50,6 @@ class BruteForceRecourse(RecourseMethodBase):
             self, 
             x: np.array,
             y_hat: np.array,
-            pbar: Union[bool, None] = None
+            pbar: bool or None = None
         ) -> np.array:
         return self._provide_recourse(x, y_hat)

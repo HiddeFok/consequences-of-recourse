@@ -19,7 +19,7 @@ from utils.utils import set_seed
 EXPERIMENT_SETTINGS = {
     'circles': {
         'args': {
-            'N': 5000, 
+            'N': 5000,
         },
         'kwargs':{
             'factor': 0.6, 
@@ -28,7 +28,7 @@ EXPERIMENT_SETTINGS = {
    },
     'moons': {
         'args': {
-            'N': 5000, 
+            'N': 5000,
         }, 
         'kwargs': {
             'noise': 0.2, 
@@ -40,7 +40,7 @@ EXPERIMENT_SETTINGS = {
             "mean_2": np.array([-1.0, 0.0]),
             "cov_1": np.array([[1., -.3], [-.3, 1.]]),
             "cov_2": np.array([[1., .8], [.8, 1.]]), 
-            'N': 5000,
+            'N': 5000, 
         }, 
         'kwargs': {
 
@@ -49,9 +49,9 @@ EXPERIMENT_SETTINGS = {
 }
 
 if __name__ == "__main__":
-    SEED = 124
+    SEEDS = [124, 142, 253, 103, 604, 105, 805, 910, 905, 506]
     TEST_SIZE = 1000
-    set_seed(SEED)
+    REPEATS = 10
 
     parser = ArgumentParser()
     parser.add_argument('--data_set', type=str,
@@ -64,83 +64,90 @@ if __name__ == "__main__":
     args = parser.parse_args()
     checkpoint_dir = f"checkpoints/{args.data_set}_cluster"
     os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(os.path.join(checkpoint_dir, "figures"), exist_ok=True)
-    os.makedirs(os.path.join(checkpoint_dir, "data"), exist_ok=True)
 
-    exp_args = EXPERIMENT_SETTINGS[args.data_set]['args'].values()
-    exp_kwargs = EXPERIMENT_SETTINGS[args.data_set]['kwargs']
 
-    X, y = load_synthetic_data(args.data_set, *exp_args, **exp_kwargs)
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE)
+    for i in range(REPEATS):
+        set_seed(SEEDS[i])
+        print(f"Working on {i+1} of {REPEATS} repeated experiments")
 
-    if args.data_set in ['moons', 'circles']:
-        cond_prob_func = lambda x: cond_prob_funcs[args.data_set](
-            x, noise=EXPERIMENT_SETTINGS[args.data_set]['kwargs']['noise']
-            )
-    else:
-        mean_1 = EXPERIMENT_SETTINGS['gaussians']['args']['mean_1']
-        mean_2 = EXPERIMENT_SETTINGS['gaussians']['args']['mean_2']
-        cov_1 = EXPERIMENT_SETTINGS['gaussians']['args']['cov_1']
-        cov_2 = EXPERIMENT_SETTINGS['gaussians']['args']['cov_2'] 
-        cov_1_inv = np.linalg.inv(cov_1)
-        cov_2_inv = np.linalg.inv(cov_2)
-        cov_1_det = np.linalg.det(cov_1)
-        cov_2_det = np.linalg.det(cov_2)
-        cond_prob_func = lambda x: cond_prob_funcs[args.data_set](
-            x, 
-            mean_1, mean_2, 
-            cov_1_inv, cov_1_det, 
-            cov_2_inv, cov_2_det 
-            )
+        experiment_dir = os.path.join(checkpoint_dir, f"experiment_{i+1}")
+        os.makedirs(os.path.join(experiment_dir, "figures"), exist_ok=True)
+        os.makedirs(os.path.join(experiment_dir, "data"), exist_ok=True)
 
-    classifier = models[args.classifier]
-    recourse = recourse_models[args.recourse]
+        exp_args = EXPERIMENT_SETTINGS[args.data_set]['args'].values()
+        exp_kwargs = EXPERIMENT_SETTINGS[args.data_set]['kwargs']
 
-    print(f"Starting Experiment: {args.data_set}, {args.classifier}, {args.recourse}")
-    result_dict = do_single_synthetic_experiment(
-        X_train, X_test,
-        y_train, y_test,
-        cond_prob_func, 
-        classifier, 
-        recourse
-    )
+        X, y = load_synthetic_data(args.data_set, *exp_args, **exp_kwargs)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=TEST_SIZE)
 
-    ## Plotting and saving
-    print(f"Plotting and saving figures: {args.data_set}, {args.classifier}, {args.recourse}")
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-    xyz, db_coords = plot_predictions_with_probs(
-        classifier['model'].predict_proba, 
-        X_train,
-        X_test, y_test,
-        result_dict['predictions'], 
-        ax, 
-        title=""
-    )
-    fig.tight_layout()
-    check_save_fig(fig, checkpoint_dir, f"predictions_{args.classifier}")
-    fig.clear()
+        if args.data_set in ['moons', 'circles']:
+            cond_prob_func = lambda x: cond_prob_funcs[args.data_set](
+                x, noise=EXPERIMENT_SETTINGS[args.data_set]['kwargs']['noise']
+                )
+        else:
+            mean_1 = EXPERIMENT_SETTINGS['gaussians']['args']['mean_1']
+            mean_2 = EXPERIMENT_SETTINGS['gaussians']['args']['mean_2']
+            cov_1 = EXPERIMENT_SETTINGS['gaussians']['args']['cov_1']
+            cov_2 = EXPERIMENT_SETTINGS['gaussians']['args']['cov_2'] 
+            cov_1_inv = np.linalg.inv(cov_1)
+            cov_2_inv = np.linalg.inv(cov_2)
+            cov_1_det = np.linalg.det(cov_1)
+            cov_2_det = np.linalg.det(cov_2)
+            cond_prob_func = lambda x: cond_prob_funcs[args.data_set](
+                x, 
+                mean_1, mean_2, 
+                cov_1_inv, cov_1_det, 
+                cov_2_inv, cov_2_det 
+                )
 
-    fig, ax = plt.subplots(1, 1, figsize=(8, 3))
-    xyz, db_coords = plot_predictions_with_probs(
-        classifier['model'].predict_proba, 
-        X_train,
-        result_dict['counterfactuals'], 
-        result_dict['y_after_recourse'],
-        result_dict['predictions_after_recourse'], 
-        ax, 
-        title=""
-    )
-    fig.tight_layout()
-    check_save_fig(fig, checkpoint_dir, f"predictions_{args.classifier}_{args.recourse}")
-    fig.clear()
+        classifier = models[args.classifier]
+        recourse = recourse_models[args.recourse]
 
-    print(f"Saving final data: {args.data_set}, {args.classifier}, {args.recourse}")
-    save_single_experiment_data(
-        checkpoint_dir,
-        result_dict, 
-        args.classifier,
-        args.recourse,
-        xyz, 
-        db_coords,
-        two_dim=True
-    )
+        print(f"Starting Experiment: {args.data_set}, {args.classifier}, {args.recourse}")
+        result_dict = do_single_synthetic_experiment(
+            X_train, X_test,
+            y_train, y_test,
+            cond_prob_func, 
+            classifier, 
+            recourse
+        )
+
+        ## Plotting and saving
+        print(f"Plotting and saving figures: {args.data_set}, {args.classifier}, {args.recourse}")
+        fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+        xyz, db_coords = plot_predictions_with_probs(
+            classifier['model'].predict_proba, 
+            X_train,
+            X_test, y_test,
+            result_dict['predictions'], 
+            ax, 
+            title=""
+        )
+        fig.tight_layout()
+        check_save_fig(fig, experiment_dir, f"predictions_{args.classifier}")
+        fig.clear()
+
+        fig, ax = plt.subplots(1, 1, figsize=(8, 3))
+        xyz, db_coords = plot_predictions_with_probs(
+            classifier['model'].predict_proba, 
+            X_train,
+            result_dict['counterfactuals'], 
+            result_dict['y_after_recourse'],
+            result_dict['predictions_after_recourse'], 
+            ax, 
+            title=""
+        )
+        fig.tight_layout()
+        check_save_fig(fig, experiment_dir, f"predictions_{args.classifier}_{args.recourse}")
+        fig.clear()
+
+        print(f"Saving final data: {args.data_set}, {args.classifier}, {args.recourse}")
+        save_single_experiment_data(
+            experiment_dir,
+            result_dict, 
+            args.classifier,
+            args.recourse,
+            xyz, 
+            db_coords,
+            two_dim=True
+        )

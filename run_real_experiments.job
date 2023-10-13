@@ -1,0 +1,78 @@
+#!/bin/bash
+
+classifiers=(lr gbc tree gnb rf qda NN_1 NN_2 NN_3 NN_4 NN_5)
+recourse_methods=(wachter growing_spheres genetic_search)
+
+echo 'starting the Credit'
+# Remove previous risks
+rm checkpoints/credit_cluster/experiment_1/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_2/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_3/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_4/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_5/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_6/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_7/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_8/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_9/data/risk_before_after.csv
+rm checkpoints/credit_cluster/experiment_10/data/risk_before_after.csv
+
+# Remove previous risks
+rm checkpoints/adult_cluster/experiment_1/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_2/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_3/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_4/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_5/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_6/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_7/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_8/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_9/data/risk_before_after.csv
+rm checkpoints/adult_cluster/experiment_10/data/risk_before_after.csv
+
+# Remove previous risks
+rm checkpoints/heloc_cluster/experiment_1/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_2/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_3/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_4/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_5/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_6/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_7/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_8/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_9/data/risk_before_after.csv
+rm checkpoints/heloc_cluster/experiment_10/data/risk_before_after.csv
+
+# Run tasks in parallel
+for i in "${classifiers[@]}"; do
+    for j in "${recourse_methods[@]}"; do
+        python -u real_experiments_multiple.py \
+            --data_set credit \
+            --classifier "$i" \
+            --recourse "$j" &
+    done 
+done
+wait
+
+
+echo 'starting the Adult'
+
+for i in "${classifiers[@]}"; do
+    for j in "${recourse_methods[@]}"; do
+        python -u real_experiments_multiple.py \
+            --data_set adult \
+            --classifier "$i" \
+            --recourse "$j" &
+    done
+done
+wait
+
+echo 'starting the Heloc'
+for i in "${classifiers[@]}"; do
+    for j in "${recourse_methods[@]}"; do
+        python -u real_experiments_multiple.py \
+            --data_set heloc \
+            --classifier "$i" \
+            --recourse "$j" &
+    done
+done 
+wait
+
+echo 'finished'

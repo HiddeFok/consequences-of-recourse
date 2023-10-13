@@ -1,7 +1,10 @@
 import os
 import numpy as np
-from typing import Dict, Callable
+from typing import Dict, Callable, Union
 
+from collections import defaultdict
+
+from tqdm import tqdm
 from joblib import load, dump
 
 from sklearn.ensemble import GradientBoostingClassifier
@@ -9,7 +12,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import GridSearchCV
 
 from utils.preproc import load_data
-from utils.utils import empirical_risk, resample_classes, tp_fn_fp_tn
+from utils.utils import empirical_risk, resample_classes, tp_fn_fp_tn, sample_bernoulli
 
 
 def do_single_real_experiment(
@@ -93,7 +96,6 @@ def do_single_real_experiment(
     }
     return return_dict
 
-
 def do_single_synthetic_experiment(
     X_train: np.array, X_test: np.array, 
     y_train: np.array, y_test: np.array,
@@ -138,6 +140,89 @@ def do_single_synthetic_experiment(
         'counterfactuals': counterfactuals, 
         'predictions_after_recourse': predictions_after_recourse, 
         'y_after_recourse': y_after_recourse, 
+        'risk_after_recourse': risk_after_recourse 
+    }
+    return return_dict
+
+
+
+def do_synthetic_experiment_acceptence_probs(
+    X_train: np.array, X_test: np.array, 
+    y_train: np.array, y_test: np.array,
+    cond_prob_func: Callable, 
+    classifier, 
+    recourse_method,
+    probs_array: Union[np.array, None] = None, 
+    sigma_array: Union[np.array, None] = None,
+) -> Dict:
+
+    ## Classifcation ##
+    classifier['model'].fit(X_train, y_train)
+    predictions = classifier['model'].predict(X_test)
+    risks = empirical_risk(
+        y_test, 
+        predictions
+    )
+
+    ## Provide Recourse ##
+    recourse_method = recourse_method(classifier['model'])
+    counterfactuals = recourse_method.provide_recourse(
+            X_test, 
+            predictions,
+            pbar=False
+        )
+    if probs_array is None:
+        squared_dist = np.square(np.linalg.norm(X_test - counterfactuals, axis=1))
+        probs_array = np.exp(-0.5 * squared_dist / sigma_array[:, None])
+        
+        array_length = sigma_array.shape[0]
+    else:
+        array_length = len(probs_array)
+    risk_after_recourse = np.zeros(array_length)
+
+    predictions_after_recourse = np.zeros((array_length, X_test.shape[0]))
+    y_after_recourse_array = np.zeros((array_length, X_test.shape[0]))
+
+    x_accepted_array = np.zeros((array_length, X_test.shape[0], X_test.shape[1]))
+
+    orig_cf_concat = np.stack([X_test, counterfactuals], axis=0)
+    for i in range(array_length):
+        if sigma_array is None:
+            p = probs_array[i]
+        else:
+            p = probs_array[i, :]
+
+        accept_recourse = sample_bernoulli(X_test.shape[0], p=p)
+        x_accepted = orig_cf_concat[accept_recourse, np.arange(X_test.shape[0]), :]
+        x_accepted_array[i, :, :] = x_accepted
+
+        predictions_after_recourse[i, :] = classifier['model'].predict(
+            x_accepted
+        )
+
+        y_after_recourse = y_test.copy()
+        mask = (predictions == 0).astype(np.uint8)
+        mask = (accept_recourse * mask).astype(bool)
+        y_after_recourse[mask] = resample_classes(
+            x_accepted[mask, :],
+            cond_prob_func
+        )
+
+        y_after_recourse_array[i, :] = y_after_recourse
+        risk_after_recourse[i] = empirical_risk(
+            y_after_recourse,
+            predictions_after_recourse[i, :]
+        )
+
+    return_dict = {
+        'X': X_test, 
+        'y': y_test,
+        'risks': risks, 
+        'predictions': predictions, 
+        'counterfactuals': counterfactuals, 
+        'x_accepted': x_accepted_array,
+        'predictions_after_recourse': predictions_after_recourse, 
+        'y_after_recourse': y_after_recourse_array, 
         'risk_after_recourse': risk_after_recourse 
     }
     return return_dict
@@ -226,4 +311,33 @@ def save_x_y_data(data_dir, X, y, y_hat, recourse=False):
         np.savetxt(os.path.join(data_dir, "y_after_recourse.dat"), y, fmt='%.6f')
         np.savetxt(os.path.join(data_dir, "predictions_after_recourse.dat"), y_hat, fmt='%.6f')
 
+def save_synthetic_experiment_data_acceptence_probs(
+        checkpoint_dir: str,
+        result_dict: Dict, 
+        classifier: str, 
+        recourse: str,
+        acceptence_probs: np.array
+    ) -> None:
+    X = result_dict['X']
+    y = result_dict['y']
 
+    predictions = result_dict['predictions']
+    risk_before = result_dict['risks']
+
+    risk_after= result_dict['risk_after_recourse']
+    counterfactuals = result_dict['counterfactuals']
+    predictions_after_recourse = result_dict['predictions_after_recourse']
+    y_after_recourse = result_dict['y_after_recourse']
+ 
+    data_dir = os.path.join(checkpoint_dir, 'data')
+    np.savetxt(os.path.join(data_dir, "X.dat"), X, fmt='%.6f')
+    np.savetxt(os.path.join(data_dir, "y.dat"), y, fmt='%.6f')
+
+    with open(os.path.join(data_dir, "risk_before_after.csv",), 'a') as f:
+        for i, p in enumerate(acceptence_probs):
+            f.write(f'{classifier},{recourse},{p},{risk_before:.3f},{risk_after[i]:.3f},{risk_after[i]-risk_before:.3f}\n')
+    
+    # For LaTex plot reasons, also save p and risk difference per classifier in seperate files
+    risk_difference = risk_after - risk_before
+    data_export = np.c_[acceptence_probs, risk_difference]
+    np.savetxt(os.path.join(data_dir, f"risk_before_after_{classifier}.dat"), data_export, fmt='%.6f')

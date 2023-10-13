@@ -134,17 +134,23 @@ def write_line(f: TextIO, data: pd.DataFrame, recourse_names: List[str]) -> None
             )
 
 
-with open('data/real_data_table.txt', 'w') as f:
+with open('data/real_data_table_credit.txt', 'w') as f:
     for clf in clf_names:
         f.write(f"{clf_names[clf]} ")
         credit_clf_data = credit.iloc[credit.index == clf]
         write_line(f, credit_clf_data, recourse_names)
-        f.write("\n")
+        f.write("\\\\\n\n")
 
+with open('data/real_data_table_adult.txt', 'w') as f:
+    for clf in clf_names:
+        f.write(f"{clf_names[clf]} ")
         adult_clf_data = adult.iloc[adult.index == clf]
         write_line(f, adult_clf_data, recourse_names)
-        f.write("\n")
+        f.write("\\\\\n\n")
 
+with open('data/real_data_table_heloc.txt', 'w') as f:
+    for clf in clf_names:
+        f.write(f"{clf_names[clf]} ")
         heloc_clf_data = heloc.iloc[heloc.index == clf]
         write_line(f, heloc_clf_data, recourse_names)
         f.write("\\\\\n\n")

@@ -18,6 +18,7 @@ class GeneticSearch(RecourseMethodBase):
 
     def _provide_recourse_single_instance(self, x) -> np.array:
         cogs = Evolution(
+        # hyper-parameters of the problem (required!)
         x=x,  
         fitness_function=gower_fitness_function,  
         fitness_function_kwargs={
@@ -27,6 +28,7 @@ class GeneticSearch(RecourseMethodBase):
         feature_intervals=self._feature_interval,
         indices_categorical_features=[],
         plausibility_constraints=None, 
+        # hyper-parameters of the evolution (all optional)
         evolution_type='classic', 
         population_size=1000,   
         n_generations=100,  

@@ -33,8 +33,8 @@ EXPERIMENT_SETTINGS = {
 }
 
 if __name__ == "__main__":
-    SEED = 124
-    set_seed(SEED)
+    SEEDS = [124, 142, 253, 103, 24, 105, 85, 91, 95, 56]
+    REPEATS = 10
 
     parser = ArgumentParser()
     parser.add_argument('--data_set', type=str,
@@ -43,6 +43,8 @@ if __name__ == "__main__":
                         choices=list(models.keys()))
     parser.add_argument('--recourse', type=str,
                         choices=list(recourse_models.keys()))
+    parser.add_argument('--experiment_nr', type=int,
+                        choices=list(range(10)))
 
     args = parser.parse_args()
 
@@ -59,25 +61,33 @@ if __name__ == "__main__":
         "test": N_test / N_total, 
     }
 
+    experiment_nr = args.experiment_nr
+
     checkpoint_dir = f"checkpoints/{args.data_set}_cluster"
     os.makedirs(checkpoint_dir, exist_ok=True)
-    os.makedirs(os.path.join(checkpoint_dir, "figures"), exist_ok=True)
-    os.makedirs(os.path.join(checkpoint_dir, "data"), exist_ok=True)
-
 
     classifier = models[args.classifier]
     recourse = recourse_models[args.recourse]
 
     print(f"Starting Experiment: {args.data_set}, {args.classifier}, {args.recourse}")
+
+    set_seed(SEEDS[experiment_nr])
+    print(f"Working on {experiment_nr} of {REPEATS} repeated experiments")
+    
+    experiment_dir = os.path.join(checkpoint_dir, f"experiment_{experiment_nr+1}")
+
+    os.makedirs(os.path.join(experiment_dir, "figures"), exist_ok=True)
+    os.makedirs(os.path.join(experiment_dir, "data"), exist_ok=True)
+    
     result_dict = do_single_real_experiment(
         args.data_set,
         fracs,
         classifier, 
         recourse
     )
-    print()
+
     save_single_experiment_data(
-        checkpoint_dir, 
+        experiment_dir, 
         result_dict, 
         args.classifier,
         args.recourse,

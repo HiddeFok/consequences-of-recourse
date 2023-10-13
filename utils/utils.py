@@ -4,7 +4,7 @@ import random
 from typing import Union
 
 from datetime import datetime
-from typing import Callable
+from typing import Callable, Union
 
 import numpy as np
 
@@ -39,6 +39,14 @@ def multivariate_normal_density(
     C = 1 / (2 * np.pi * cov_det)
     exp = np.exp(-.5 * local_norm_sq(x, mean, cov_inv))
     return C * exp
+
+
+def sample_bernoulli(n: int, p: Union[float, np.array]) -> np.array:
+    if hasattr(p, "__len__"):
+        return (np.random.uniform(size=n) < p).astype(np.uint8)
+    else:
+        p = np.repeat(p, n)
+        return (np.random.uniform(size=n) < p).astype(np.uint8)
 
 
 def projection(x: np.array, beta: np.array, c: np.array) -> np.array:

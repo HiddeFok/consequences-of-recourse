@@ -81,8 +81,8 @@ class Wachter(RecourseMethodBase):
                     x_recourse[i, :] = x[i, :]
         else:
             for i in range(x_recourse.shape[0]):
-                if i%50 == 0:
-                    print(f'Generated {i} CFs so far')
+                # if i%50 == 0:
+                #     print(f'Generated {i} CFs so far')
                 if y_hat[i] == 0:
                     cf = self._provide_recourse_single_instance(x[i, :])
                     x_recourse[i, :] = cf

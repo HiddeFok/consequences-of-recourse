@@ -6,17 +6,17 @@ import matplotlib.pyplot as plt
 
 from scipy.stats import norm
 
-from data.synthetic_data import create_gaussian_data
-
 from utils.experiment import save_x_y_data
 from utils.utils import (
     local_norm_sq,
+    create_synthetic_data,
     empirical_risk,
     resample_classes,
     set_seed, 
     setup_checkpoint_dir, 
 )
 from utils.plot_utils import (
+    get_boundary_function, 
     check_save_fig
 )
 
@@ -54,7 +54,7 @@ num = local_norm_sq(mean_1, mean_2, cov_inv)
 bayes_risk = norm.cdf(-0.5 * np.sqrt(num))
 print("Bayes risk", bayes_risk)
 
-data = create_gaussian_data(mean_1, mean_2, cov, cov, N, frac=frac)
+data = create_synthetic_data(mean_1, mean_2, cov, cov, N, frac=frac)
 x = data[:, :-1]
 y = data[:, -1]
 
@@ -65,6 +65,7 @@ beta, c = lda.get_params()
 print(beta, c)
 y_hat = lda.predict(x)
 print(sum(y_hat))
+boundary = get_boundary_function(beta, c)
 
 risk = empirical_risk(y, y_hat)
 print(risk)

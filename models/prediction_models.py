@@ -1,7 +1,3 @@
-"""
-Implementations of LDA and QDA with some custom plot and parameter functions
-"""
-
 from abc import ABC, abstractmethod
 from typing import Callable
 

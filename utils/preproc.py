@@ -50,7 +50,7 @@ def data_splits(
 
 
 def load_credit(
-        fracs: Dict[float, float],
+        fracs: Dict[str, float],
         dataset_folder: Union[str, bytes, os.PathLike] = "./data/csv_files"
     ) -> Dict:
     # Categorical features are:
