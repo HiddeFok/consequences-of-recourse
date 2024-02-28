@@ -44,6 +44,19 @@ def plot_ellipse(
     axs.set_xticks(())
     axs.set_yticks(())
 
+def get_boundary_function(
+        coef: np.array,
+        c: float
+) -> Callable:
+    def boundary(
+            x: np.array,
+            coef: np.array = coef,
+            c: float = c
+    ) -> np.array:
+        slope = -coef[0] / coef[1]
+        intercept = c / coef[1]
+        return x * slope + intercept
+    return boundary
 
 # Storing figures
 def check_save_fig(

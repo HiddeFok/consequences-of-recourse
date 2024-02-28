@@ -41,6 +41,34 @@ def multivariate_normal_density(
     return C * exp
 
 
+def create_synthetic_data(
+        mean_1: np.array,
+        mean_2: np.array,
+        cov_1: np.array,
+        cov_2: np.array,
+        N: int,
+        frac: float = 0.5
+) -> np.array:
+
+    features_class_1 = np.random.multivariate_normal(
+        mean=mean_1,
+        cov=cov_1,
+        size=int(N * frac)
+    )
+    features_class_2 = np.random.multivariate_normal(
+        mean=mean_2,
+        cov=cov_2,
+        size=int(N * (1 - frac))
+    )
+
+    features = np.vstack((features_class_1, features_class_2))
+    labels = np.zeros((N, 1))
+    labels[:(int(N * frac))] = 1
+    data = np.hstack((features, labels))
+
+    return data
+
+
 def sample_bernoulli(n: int, p: Union[float, np.array]) -> np.array:
     if hasattr(p, "__len__"):
         return (np.random.uniform(size=n) < p).astype(np.uint8)
